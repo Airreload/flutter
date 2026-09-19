@@ -116,8 +116,57 @@ void main() {
         expect(flutterDevice.device, isA<AirreloadDevice>());
         expect(await command.findTargetDevice(), same(flutterDevice.device));
         expect(flutterDevice.device!.portForwarder, isNull);
+        expect(flutterDevice.device!.supportsHotRestart, isTrue);
         expect(await flutterDevice.vmServiceUris!.first, Uri.parse(url));
         expect(flutterDevice.buildInfo.mode, BuildMode.debug);
+        expect(hotRunnerFactory.debuggingOptions.enableDds, isTrue);
+        expect(hotRunnerFactory.debuggingOptions.enableDevTools, isTrue);
+        expect(hotRunnerFactory.debuggingOptions.disablePortPublication, isTrue);
+        expect(hotRunnerFactory.debuggingOptions.ipv6, isFalse);
+      },
+      overrides: <Type, Generator>{
+        FileSystem: () => testFileSystem,
+        ProcessManager: () => FakeProcessManager.empty(),
+        Logger: () => logger,
+        DeviceManager: () => testDeviceManager,
+      },
+    );
+
+    testUsingContext(
+      'airreload can disable DDS while keeping the tunnel attach path',
+      () async {
+        final hotRunner = FakeHotRunner();
+        hotRunner.onAttach =
+            (
+              Completer<DebugConnectionInfo>? connectionInfoCompleter,
+              Completer<void>? appStartedCompleter,
+              bool enableDevTools,
+            ) async => 0;
+        hotRunner.exited = false;
+        hotRunner.isWaitingForVmService = false;
+        final hotRunnerFactory = FakeHotRunnerFactory()..hotRunner = hotRunner;
+        final command = AttachCommand(
+          hotRunnerFactory: hotRunnerFactory,
+          stdio: stdio,
+          logger: logger,
+          terminal: terminal,
+          signals: signals,
+          platform: platform,
+          processInfo: processInfo,
+          fileSystem: testFileSystem,
+        );
+        await createTestCommandRunner(command).run(<String>[
+          'attach',
+          '--airreload',
+          '--debug-url',
+          'http://127.0.0.1:54321/test-token_123=/',
+          '--no-dds',
+          '--no-devtools',
+        ]);
+        expect(hotRunnerFactory.debuggingOptions.enableDds, isFalse);
+        expect(hotRunnerFactory.debuggingOptions.enableDevTools, isFalse);
+        expect(hotRunnerFactory.debuggingOptions.disablePortPublication, isTrue);
+        expect(hotRunnerFactory.devices.single.device, isA<AirreloadDevice>());
       },
       overrides: <Type, Generator>{
         FileSystem: () => testFileSystem,
@@ -1718,6 +1767,7 @@ class FakeHotRunnerFactory extends Fake implements HotRunnerFactory {
   String? dillOutputPath;
   String? projectRootPath;
   late List<FlutterDevice> devices;
+  late DebuggingOptions debuggingOptions;
   void Function(Artifacts artifacts)? _artifactTester;
 
   @override
@@ -1745,6 +1795,7 @@ class FakeHotRunnerFactory extends Fake implements HotRunnerFactory {
     this.devices = devices;
     this.dillOutputPath = dillOutputPath;
     this.projectRootPath = projectRootPath;
+    this.debuggingOptions = debuggingOptions;
     hotRunner.flutterDevices
       ..clear()
       ..addAll(devices);
