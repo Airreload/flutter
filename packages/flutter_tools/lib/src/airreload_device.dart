@@ -59,8 +59,10 @@ class AirreloadDevice extends Device {
     await dds.shutdown();
   }
 
+  /// Hot restart replaces the Dart isolate. Airreload's transport is owned by
+  /// the Android process, so the VM-service tunnel survives isolate replacement.
   @override
-  bool get supportsHotRestart => false;
+  bool get supportsHotRestart => true;
 
   @override
   bool get supportsFlutterExit => false;
