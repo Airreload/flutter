@@ -48,6 +48,23 @@ void main() {
     );
   });
 
+  testUsingContext('Airreload preserves the upstream version and actual fork revision', () {
+    final fs = MemoryFileSystem.test();
+    const flutterRoot = '/airreload/flutter';
+    fs.file('$flutterRoot/bin/internal/airreload.version')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('3.41.9\n');
+    final version = FlutterVersion.fromRevision(
+      flutterRoot: flutterRoot,
+      frameworkRevision: 'airreload-commit',
+      fs: fs,
+      git: git,
+    );
+    expect(version.frameworkVersion, '3.41.9');
+    expect(version.frameworkRevision, 'airreload-commit');
+    expect(processManager, hasNoRemainingExpectations);
+  });
+
   testUsingContext('Channel enum and string transform to each other', () {
     for (final Channel channel in Channel.values) {
       expect(getNameForChannel(channel), kOfficialChannels.toList()[channel.index]);
