@@ -66,7 +66,7 @@ void main() {
 class FakeApplicationPackage extends Fake implements ApplicationPackage {}
 
 class PendingDartDevelopmentService extends Fake implements DartDevelopmentService {
-  bool shutdownCalled = false;
+  var shutdownCalled = false;
 
   @override
   void shutdown() {
