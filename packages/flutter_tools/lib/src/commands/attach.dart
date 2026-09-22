@@ -94,7 +94,13 @@ class AttachCommand extends FlutterCommand {
     argParser.addFlag(
       'airreload',
       negatable: false,
-      help: 'Attach to an app-managed tunnel, without device discovery (Android ARM64 debug only).',
+      help: 'Attach to an app-managed tunnel, without device discovery (Android debug only).',
+    );
+    argParser.addOption(
+      'airreload-target-platform',
+      defaultsTo: 'android-arm64',
+      allowed: <String>['android-arm', 'android-arm64', 'android-x64'],
+      help: 'Android architecture used to build the Airreload app.',
     );
     argParser
       ..addOption(
@@ -187,7 +193,10 @@ known, it can be explicitly provided to attach via the command-line, e.g.
   @override
   Future<Device?> findTargetDevice({bool includeDevicesUnsupportedByProject = false}) async {
     if (boolArg('airreload')) {
-      return _airreloadDevice ??= AirreloadDevice(logger: _logger);
+      return _airreloadDevice ??= AirreloadDevice(
+        logger: _logger,
+        platform: getTargetPlatformForName(stringArg('airreload-target-platform')!),
+      );
     }
     return super.findTargetDevice(
       includeDevicesUnsupportedByProject: includeDevicesUnsupportedByProject,

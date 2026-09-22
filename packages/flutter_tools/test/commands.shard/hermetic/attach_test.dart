@@ -108,12 +108,17 @@ void main() {
           fileSystem: testFileSystem,
         );
         const url = 'http://127.0.0.1:54321/test-token_123=/';
-        await createTestCommandRunner(
-          command,
-        ).run(<String>['attach', '--airreload', '--debug-url', url]);
+        await createTestCommandRunner(command).run(<String>[
+          'attach',
+          '--airreload',
+          '--debug-url',
+          url,
+          '--airreload-target-platform=android-x64',
+        ]);
         expect(command.refreshWirelessDevices, isFalse);
         final FlutterDevice flutterDevice = hotRunnerFactory.devices.single;
         expect(flutterDevice.device, isA<AirreloadDevice>());
+        expect(await flutterDevice.device!.targetPlatform, TargetPlatform.android_x64);
         expect(await command.findTargetDevice(), same(flutterDevice.device));
         expect(flutterDevice.device!.portForwarder, isNull);
         expect(flutterDevice.device!.supportsHotRestart, isTrue);

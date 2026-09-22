@@ -144,14 +144,24 @@ abstract class FlutterVersion {
     required Git git,
     bool fetchTags = false,
   }) {
-    final GitTagVersion gitTagVersion = GitTagVersion.determine(
-      globals.platform,
-      git: git,
-      gitRef: frameworkRevision,
-      workingDirectory: flutterRoot,
-      fetchTags: fetchTags,
+    // Preserve the exact upstream SDK version after adding Airreload commits.
+    final File airreloadFile = fs.file(
+      fs.path.join(flutterRoot, 'bin', 'internal', 'airreload.version'),
     );
-    final String frameworkVersion = gitTagVersion.frameworkVersionFor(frameworkRevision);
+    final String? airreloadVersion = airreloadFile.existsSync()
+        ? airreloadFile.readAsStringSync().trim()
+        : null;
+    final GitTagVersion gitTagVersion = airreloadVersion != null
+        ? GitTagVersion.parse(airreloadVersion)
+        : GitTagVersion.determine(
+            globals.platform,
+            git: git,
+            gitRef: frameworkRevision,
+            workingDirectory: flutterRoot,
+            fetchTags: fetchTags,
+          );
+    final String frameworkVersion =
+        airreloadVersion ?? gitTagVersion.frameworkVersionFor(frameworkRevision);
     final result = _FlutterVersionGit._(
       clock: clock,
       flutterRoot: flutterRoot,

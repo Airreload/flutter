@@ -9,7 +9,7 @@ import 'device_port_forwarder.dart';
 import 'project.dart';
 
 class AirreloadDevice extends Device {
-  AirreloadDevice({required super.logger})
+  AirreloadDevice({required super.logger, this.platform = TargetPlatform.android_arm64})
     : super(
         'airreload',
         category: Category.mobile,
@@ -17,8 +17,10 @@ class AirreloadDevice extends Device {
         ephemeral: true,
       );
 
+  final TargetPlatform platform;
+
   @override
-  String get name => 'Airreload Android ARM64';
+  String get name => 'Airreload ${getNameForTargetPlatform(platform)}';
 
   @override
   bool supportsRuntimeMode(BuildMode buildMode) => buildMode == BuildMode.debug;
@@ -27,7 +29,7 @@ class AirreloadDevice extends Device {
   bool get supportsStartPaused => false;
 
   @override
-  Future<TargetPlatform> get targetPlatform async => TargetPlatform.android_arm64;
+  Future<TargetPlatform> get targetPlatform async => platform;
 
   @override
   Future<bool> get isLocalEmulator async => false;
