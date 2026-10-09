@@ -423,6 +423,10 @@ known, it can be explicitly provided to attach via the command-line, e.g.
       disablePortPublication: boolArg('airreload'),
     );
 
+    if (boolArg('airreload')) {
+      await flutterDevice.startEchoingDeviceLog(debuggingOptions);
+    }
+
     return buildInfo.isDebug
         ? _hotRunnerFactory.build(
             flutterDevices,
