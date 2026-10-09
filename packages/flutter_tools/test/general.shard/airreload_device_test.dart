@@ -41,7 +41,9 @@ void main() {
       expect(device.supportsFlutterExit, isFalse);
       expect(device.supportsStartPaused, isFalse);
       expect(device.portForwarder, isNull);
-      expect(device.getLogReader(), isA<NoOpDeviceLogReader>());
+      expect(device.getLogReader(), isA<AirreloadLogReader>());
+      expect(device.getLogReader(), same(device.getLogReader()));
+      device.getLogReader().dispose();
     },
   );
 
