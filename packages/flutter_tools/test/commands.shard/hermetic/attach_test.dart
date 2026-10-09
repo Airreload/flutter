@@ -22,6 +22,7 @@ import 'package:flutter_tools/src/build_info.dart';
 import 'package:flutter_tools/src/cache.dart';
 import 'package:flutter_tools/src/commands/attach.dart';
 import 'package:flutter_tools/src/compile.dart';
+import 'package:flutter_tools/src/convert.dart';
 import 'package:flutter_tools/src/device.dart';
 import 'package:flutter_tools/src/device_port_forwarder.dart';
 import 'package:flutter_tools/src/device_vm_service_discovery_for_attach.dart';
@@ -41,6 +42,7 @@ import 'package:vm_service/vm_service.dart' as vm_service;
 import '../../src/common.dart';
 import '../../src/context.dart';
 import '../../src/fake_devices.dart';
+import '../../src/fake_vm_services.dart';
 import '../../src/test_flutter_command_runner.dart';
 
 class FakeStdio extends Fake implements Stdio {
@@ -123,6 +125,43 @@ void main() {
         expect(hotRunnerFactory.debuggingOptions.enableDevTools, isTrue);
         expect(hotRunnerFactory.debuggingOptions.disablePortPublication, isTrue);
         expect(hotRunnerFactory.debuggingOptions.ipv6, isFalse);
+        final messages = <String>[];
+        final StreamSubscription<String> logSubscription = logger.stream.listen(messages.add);
+        addTearDown(logSubscription.cancel);
+        final host = FakeVmServiceHost(
+          requests: <VmServiceExpectation>[
+            for (final stream in <String>['Debug', 'Stdout', 'Stderr'])
+              FakeVmServiceRequest(
+                method: 'streamListen',
+                args: <String, Object>{'streamId': stream},
+              ),
+            FakeVmServiceStreamResponse(
+              streamId: 'Stdout',
+              event: vm_service.Event(
+                kind: 'WriteEvent',
+                timestamp: 0,
+                bytes: base64.encode(utf8.encode('Airreload app output\n')),
+              ),
+            ),
+            FakeVmServiceStreamResponse(
+              streamId: 'Stderr',
+              event: vm_service.Event(
+                kind: 'WriteEvent',
+                timestamp: 0,
+                bytes: base64.encode(utf8.encode('Airreload app error\n')),
+              ),
+            ),
+          ],
+        );
+        final DeviceLogReader logReader = await flutterDevice.device!.getLogReader();
+        await logReader.provideVmService(host.vmService);
+        await pumpEventQueue();
+        expect(messages, contains('[stdout] Airreload app output'));
+        expect(messages, contains('[stdout] Airreload app error'));
+        expect(host.hasRemainingExpectations, isFalse);
+        await flutterDevice.stopEchoingDeviceLog();
+        logReader.dispose();
+        await host.vmService.dispose();
       },
       overrides: <Type, Generator>{
         FileSystem: () => testFileSystem,

@@ -15,19 +15,24 @@ import 'package:test/fake.dart';
 import '../src/common.dart';
 
 void main() {
-  testWithoutContext('supports only Android ARM64 debug attach, hot reload, and hot restart', () async {
-    final device = AirreloadDevice(logger: BufferLogger.test());
-    expect(await device.targetPlatform, TargetPlatform.android_arm64);
-    expect(device.supportsRuntimeMode(BuildMode.debug), isTrue);
-    expect(device.supportsRuntimeMode(BuildMode.profile), isFalse);
-    expect(device.supportsRuntimeMode(BuildMode.release), isFalse);
-    expect(device.supportsHotReload, isTrue);
-    expect(device.supportsHotRestart, isTrue);
-    expect(device.supportsFlutterExit, isFalse);
-    expect(device.supportsStartPaused, isFalse);
-    expect(device.portForwarder, isNull);
-    expect(device.getLogReader(), isA<NoOpDeviceLogReader>());
-  });
+  testWithoutContext(
+    'supports only Android ARM64 debug attach, hot reload, and hot restart',
+    () async {
+      final device = AirreloadDevice(logger: BufferLogger.test());
+      expect(await device.targetPlatform, TargetPlatform.android_arm64);
+      expect(device.supportsRuntimeMode(BuildMode.debug), isTrue);
+      expect(device.supportsRuntimeMode(BuildMode.profile), isFalse);
+      expect(device.supportsRuntimeMode(BuildMode.release), isFalse);
+      expect(device.supportsHotReload, isTrue);
+      expect(device.supportsHotRestart, isTrue);
+      expect(device.supportsFlutterExit, isFalse);
+      expect(device.supportsStartPaused, isFalse);
+      expect(device.portForwarder, isNull);
+      expect(device.getLogReader(), isA<AirreloadLogReader>());
+      expect(device.getLogReader(), same(device.getLogReader()));
+      device.getLogReader().dispose();
+    },
+  );
 
   testWithoutContext('does not install, launch, uninstall, or stop an app', () async {
     final device = AirreloadDevice(logger: BufferLogger.test());
